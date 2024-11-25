@@ -1,16 +1,17 @@
 ---
 title: "Lab 9: Data Simulation Exploration"
-author: "Your name here!"
-format: html
+author: "Lisette Abundez"
+format: 
+  html:
+    code-tools: true
+    echo: true
+    code-fold: true
 editor: source
 embed-resources: true
+warning: false
+message: false
 ---
 
-```{r}
-#| label: setup
-
-
-```
 
 ## Random Babies Simulation
 
@@ -34,11 +35,14 @@ for it to be compatible with `map_int()`!
 #| label: function-simulation-for-random-babies
 
 randomBabies <- function(nBabies){
-  ...
+  assigned <- sample(1:nBabies, 
+                     nBabies, 
+                     replace = FALSE)
+   sum(assigned == 1:nBabies)
 }
 
 results <- map_int(.x = 1:10000,
-                   .f = ___
+                   .f = ~randomBabies(4)
                    )
 ```
 
@@ -54,7 +58,7 @@ You may find the following code helpful:
 ```{r}
 #| eval: false
 
-enframe(results, 
+proportions_df <- enframe(results, 
         name = "simulation_number", 
         value = "ncorrect")
 ```
@@ -63,7 +67,13 @@ enframe(results,
 ```{r}
 #| label: table-for-random-babies
 
-
+proportions_df <- proportions_df |>
+  count(ncorrect) |>
+  mutate(proportion = n / sum(n)) |>
+  select(ncorrect, proportion) |>
+  pivot_wider(names_from = ncorrect, 
+              values_from = proportion,
+              names_prefix = "correct_")
 ```
 
 **3. Now create a barplot showing the proportion of simulations where 0, 1, 2, 3, and 4 babies were given to their correct parent(s).** 
@@ -74,18 +84,31 @@ You may find the following code helpful:
 ```{r}
 #| eval: false
 
-geom_bar(mapping = aes(y = after_stat(count) / sum(after_stat(count))
-                       )
-         )
+long_df <- proportions_df |> 
+  pivot_longer(cols = everything(), 
+               names_to = "ncorrect", 
+               values_to = "proportion")
+
+ggplot(long_df) +
+  geom_bar(aes(x = ncorrect, y = proportion), 
+           stat = "identity", fill = "skyblue", color = "black") +
+  scale_x_discrete(labels = c("correct_0" = "None", 
+                              "correct_1" = "1", 
+                              "correct_2" = "2", 
+                              "correct_3" = "3",
+                              "correct_4" = "All")) +
+  labs(x = "Number of Correct Assignments", 
+       y = NULL,
+       subtitle = "Proportion of Simulations",
+       title = "Proportion of Simulations by Correct Assignments") 
+
+
 ```
 :::
 
-```{r}
-#| label: visualization-for-random-babies
+Used ChatGPT (https://chatgpt.com/share/6744f5c0-70b4-800e-9cd7-9cd400fccf5e) to navigate how my approach was different from the inital code provided. 
 
-```
-
-## Central Limit Theorem -- Optional & Somewhat Spicy
+Central Limit Theorem -- Optional & Somewhat Spicy
 
 You have encountered the Central Limit Theorem in your previous statistics 
 classes, whether or not is has been explicitly discussed. The Central Limit 
