@@ -34,6 +34,11 @@ for it to be compatible with `map_int()`!
 ```{r}
 #| label: function-simulation-for-random-babies
 
+library(purrr)
+library(dplyr)
+library(tidyverse)
+library(gt)
+
 randomBabies <- function(nBabies){
   assigned <- sample(1:nBabies, 
                      nBabies, 
@@ -56,8 +61,7 @@ that--it converts a vector to a data frame.
 You may find the following code helpful:
 
 ```{r}
-#| eval: false
-
+#| label: create-table
 proportions_df <- enframe(results, 
         name = "simulation_number", 
         value = "ncorrect")
@@ -73,7 +77,37 @@ proportions_df <- proportions_df |>
   select(ncorrect, proportion) |>
   pivot_wider(names_from = ncorrect, 
               values_from = proportion,
-              names_prefix = "correct_")
+              names_prefix = "correct_") 
+
+proportions_table <- proportions_df |>
+  gt() |>
+  cols_label(
+    correct_0 = "None",
+    correct_1 = "One Correct",
+    correct_2 = "Two Correct",
+    correct_4 = "All Correct"
+  ) |>
+  tab_header(
+    title = "Proportions of Babies Returned to Correct Parents",
+    subtitle = "(Out of 4 babies)"
+  ) |>
+  fmt_percent() |>
+  tab_style(
+    style = cell_text(
+      size = 14,
+      align = "center"
+    ),
+    locations = cells_body()
+  ) |>
+  tab_style(
+    style = cell_text(
+      align = "center"
+    ),
+    locations = cells_column_labels()
+  )
+
+proportions_table
+
 ```
 
 **3. Now create a barplot showing the proportion of simulations where 0, 1, 2, 3, and 4 babies were given to their correct parent(s).** 
@@ -83,6 +117,16 @@ You may find the following code helpful:
 
 ```{r}
 #| eval: false
+
+geom_bar(mapping = aes(y = after_stat(count) / sum(after_stat(count))
+                       )
+         )
+
+```
+:::
+
+``` {r}
+#| label: visualization-distribution
 
 long_df <- proportions_df |> 
   pivot_longer(cols = everything(), 
@@ -101,99 +145,6 @@ ggplot(long_df) +
        y = NULL,
        subtitle = "Proportion of Simulations",
        title = "Proportion of Simulations by Correct Assignments") 
-
-
-```
-:::
-
+``` 
 Used ChatGPT (https://chatgpt.com/share/6744f5c0-70b4-800e-9cd7-9cd400fccf5e) to navigate how my approach was different from the inital code provided. 
-
-Central Limit Theorem -- Optional & Somewhat Spicy
-
-You have encountered the Central Limit Theorem in your previous statistics 
-classes, whether or not is has been explicitly discussed. The Central Limit 
-Theorem states that: 
-
-> The sampling distribution of the mean will always be normally distributed, as
-> long as the sample size is large enough, regardless of the underlying 
-> distribution of the population. 
-
-Remember back to your first statistics class when you had to check if the 
-sample size was larger than 30 when testing if groups had different means? 
-That's because of the Central Limit Theorem! Under certain conditions 
-(e.g., sample size) the Central Limit Theorem ensures that the distribution 
-of sample means will be approximately Normal, regardless of how skewed the 
-underlying distribution of the population may be. 
-
-A fundamental misunderstanding of the Central Limit Theorem is that it states 
-that as a sample size gets larger, the population will be normally distributed. 
-This is not the case, so let's do some exploring!  
-
-**4. Write a function that simulates a specified number of sample means, for samples of size 100 drawn from a Chi-Squared distribution. Your function should allow the user to input:**
-
-- **the number of means to simulate**
-- **the degrees of freedom of the Chi-Squared distribution used to simulate data** 
-
-I've provided some skeleton code to get you started. :) 
-
-```{r}
-simulate_means <- function(n, df){
-  map_dbl(.x = ___, 
-          .f = ~rchisq(n = 100, ___) %>% mean()
-          )
-}
-```
-
-**5. Next, let's use the `crossing()` function to make a grid with inputs we want to pass into the `simulate_means()` function. Specifically, we want to explore the following values:**
-
--  **`n` = 10, 100, 1000, 10000**
--  **`df` = 10**
-
-```{r}
-grid <- crossing(n = ___, 
-                 df = 5)
-```
-
-**6. Now, use a `p_map()` to create a new column of simulated means (using the `simulate_means()` function), for every value in your `grid`.**
-
-::: {.callout-tip}
-You will want to use the `unnest()` function to extract the results of the
-`p_map()` (stored in the `simulated_means` column). 
-:::
-
-```{r}
-all_simulations <- grid |> 
-  mutate(simulated_means = pmap(.l = list(___), 
-                                .f = simulate_means)
-         ) |> 
-  unnest(___) 
-
-```
-
-**7. Create a table of the means from each of the simulations (10, 100, 1000, and 10000).** 
-Hint: Make sure your columns have descriptive names!
-
-```{r}
-#| label: table-of-simulated Means
-
-
-```
-
-**8. Create a plot showing the distribution of simulated means from each of the simulations. Each simulation (10, 100, 1000, and 10000) should be its own facet!**
-Hint: Make sure your facets have descriptive names! You might also want to free
-the y-axis of the plots, since there are substantial differences in the sample
-sizes between the simulations. 
-
-**For extra pizzaz, add a vertical line for true mean (for a Chi-Square the mean is the degrees of freedom).**
-
-```{r}
-#| label: plot-of-simulated Means
-
-
-```
-
-## Challenge 9
-
-Instructions for the challenge can be found on the course website or through 
-the link in Canvas! 
 
